@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Was That Clumsy, Inappropriate or Unacceptable?</title>
+  
+  <!-- IMPORTANT FOR SHAREPOINT:
+       The following CDN for Tailwind CSS must be allowed by SharePoint's Content Security Policy (CSP).
+       If blocked, styling will not apply.
+  -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom spinner for loading state */
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #3b82f6; /* Tailwind blue-500 */
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen flex flex-col items-center p-4">
+  <div class="max-w-xl w-full bg-white p-6 rounded-xl shadow-lg mx-auto">
+    <h1 class="text-2xl font-bold mb-1 text-gray-900">Was That Clumsy, Inappropriate or Unacceptable?</h1>
+    <p class="mb-4 text-sm text-gray-600 italic">Confirming conduct is aligned with our FIR Policy and recommending a course of action.</p>
+
+    <textarea id="inputText" rows="5" class="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:ring-blue-500 focus:border-blue-500 resize-y" placeholder="Describe what happened… short or long is fine."></textarea>
+    
+    <div class="flex space-x-3 mb-4">
+      <button onclick="classifyInput()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 ease-in-out shadow-md font-semibold">Check It</button>
+      <button onclick="clearInput()" class="flex-1 bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition duration-200 ease-in-out shadow-md font-semibold">Clear</button>
+    </div>
+
+    <div id="result" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 min-h-[100px] text-center">
+      <p class="text-gray-500 italic">Enter a description and click "Check It" to get started.</p>
+    </div>
+
+    <details class="mt-6 text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-200">
+      <summary class="cursor-pointer font-semibold underline text-blue-700 hover:text-blue-800">▶ Behaviour Thresholds: What Counts as Clumsy, Inappropriate or Unacceptable?</summary>
+      <div class="mt-2">
+        <p class="mb-2"><strong>🟢 Clumsy:</strong> One-off, unintentional behaviour. Might include awkward jokes, clumsy phrasing, or cultural misunderstandings. Becomes <em>Inappropriate</em> if repeated after feedback.</p>
+        <p class="mb-2"><strong>🟡 Inappropriate:</strong> Behaviour that excludes, disrespects or shuts others down. Becomes <em>Unacceptable</em> if it's persistent, targeted or harmful.</p>
+        <p><strong>🔴 Unacceptable:</strong> Clear breaches like harassment, bullying, threats or discrimination. Even one instance is serious and should be reported immediately.</p>
+      </div>
+    </details>
+
+    <div class="mt-8 border-t pt-4 text-sm text-gray-700">
+      <p class="font-semibold mb-1 text-gray-900">Support Contacts:</p>
+      <p><strong>Employee Assistance (24/7):</strong><br>Australia: 1800 808 374<br>New Zealand: 0800 808 374<br>International: +61 7 3211 8919</p>
+      <p class="mt-2"><strong>Whistleblower Hotline (FairCall by KPMG):</strong><br>Australia: 1800 500 965<br>New Zealand: 0800 100 526<br>Email: <a href="mailto:FairCall@kpmg.com.au" class="text-blue-600 underline hover:text-blue-800">FairCall@kpmg.com.au</a><br>Web: <a href="https://www.kpmgfaircall.kpmg.com.au/ventia" class="text-blue-600 underline hover:text-blue-800" target="_blank">kpmgfaircall.kpmg.com.au/ventia</a></p>
+    </div>
+  </div>
+
+  <script>
+    async function classifyInput() {
+      const input = document.getElementById("inputText").value.trim();
+      const resultDiv = document.getElementById("result");
+
+      if (!input) {
+        resultDiv.innerHTML = '<p class="text-red-500">Please describe the situation first.</p>';
+        resultDiv.classList.remove('flex', 'items-center', 'justify-center');
+        resultDiv.classList.add('text-left');
+        return;
+      }
+
+      resultDiv.innerHTML = '<div class="flex items-center justify-center"><div class="spinner"></div><p class="text-gray-500 italic">Processing... Please wait for the AI to analyze.</p></div>';
+      resultDiv.classList.add('flex', 'items-center', 'justify-center'); 
+      resultDiv.classList.remove('text-left');
+
+      const prompt = `You are a friendly and professional assistant trained on Ventia’s FIR (Fairness, Inclusion, and Respect) policy.
+When someone describes a workplace situation, your job is to:
+1. Classify the behaviour as one of:
+   - Clumsy (one-off, unintentional, awkward, cultural misunderstandings)
+   - Inappropriate (disrespectful, repeated, or causing exclusion, shuts others down)
+   - Unacceptable (serious breaches like bullying, harassment, threats, discrimination, persistent, targeted or harmful)
+2. Use clues from the user’s description (e.g. words like “again”, “always”, “laughed”, “offended”, “after I asked them to stop”, "unintentional", "one-off", "repeated", "persistent", "targeted", "harmful") to detect:
+   - Intent (was it accidental or deliberate?)
+   - Impact (how did it affect others?)
+   - Frequency (one-off or repeated pattern?)
+   - Power dynamics (was there a power imbalance involved?)
+3. Apply FIR thresholds dynamically based on the above analysis.
+4. Suggest tailored next steps—not just label behaviour. This should be aligned with FIR policy and the severity of the classification.
+
+Here is the user's description: "${input}"
+
+Please provide your response in the following format, using Markdown for clarity. Ensure each section (Classification, Reasoning, Next Steps) starts on a new line with its bolded heading, followed by its content.
+
+**Classification:** [Clumsy / Inappropriate / Unacceptable]
+**Reasoning:** [Explain why it fits this level, referencing intent, impact, frequency, and power dynamics if relevant, and how it aligns with FIR policy.]
+**Next Steps:** [Provide specific, actionable advice aligned with FIR policy, such as speaking to the person, documenting, escalating to manager/P&C, or reporting formally via hotline. Ensure the advice is tailored to the severity.]`;
+
+      let chatHistory = [];
+      chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+      const payload = { contents: chatHistory };
+      // IMPORTANT FOR PUBLIC HOSTING (e.g., GitHub Pages):
+      // In a production environment, directly hardcoding the API key in client-side
+      // code is NOT secure. Consider using a secure server-side proxy (e.g., Azure Function,
+      // Cloudflare Worker, or a simple Node.js/Python backend) to make this API call
+      // to keep your API key secure. For testing/demonstration, it might be acceptable.
+      const apiKey = ""; // Canvas will automatically provide the API key
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        resultDiv.classList.remove('flex', 'items-center', 'justify-center');
+        resultDiv.classList.add('text-left');
+
+        if (result.candidates && result.candidates.length > 0 &&
+            result.candidates[0].content && result.candidates[0].content.parts &&
+            result.candidates[0].content.parts.length > 0) {
+          const aiResponseText = result.candidates[0].content.parts[0].text;
+
+          const lines = aiResponseText.split('\n').filter(line => line.trim() !== '');
+          let classification = '';
+          let reasoning = '';
+          let nextSteps = '';
+
+          let currentSection = '';
+          lines.forEach(line => {
+            if (line.startsWith('**Classification:**')) {
+              classification = line.replace('**Classification:**', '').trim();
+              currentSection = 'classification';
+            } else if (line.startsWith('**Reasoning:**')) {
+              reasoning = line.replace('**Reasoning:**', '').trim();
+              currentSection = 'reasoning';
+            } else if (line.startsWith('**Next Steps:**')) {
+              nextSteps = line.replace('**Next Steps:**', '').trim();
+              currentSection = 'nextSteps';
+            } else {
+              if (currentSection === 'classification') classification += ' ' + line.trim();
+              else if (currentSection === 'reasoning') reasoning += ' ' + line.trim();
+              else if (currentSection === 'nextSteps') nextSteps += ' ' + line.trim();
+            }
+          });
+
+          let classificationColorClass = 'text-gray-800';
+          if (classification.includes("Unacceptable")) {
+            classificationColorClass = 'text-red-600';
+          } else if (classification.includes("Inappropriate")) {
+            classificationColorClass = 'text-yellow-600';
+          } else if (classification.includes("Clumsy")) {
+            classificationColorClass = 'text-green-600';
+          }
+
+          resultDiv.innerHTML = `
+            <div class="mb-3">
+              <h3 class="font-bold text-lg mb-1 ${classificationColorClass}">Classification: ${classification}</h3>
+            </div>
+            <div class="mb-3">
+              <h3 class="font-bold text-lg mb-1 text-gray-900">Reasoning:</h3>
+              <p class="break-words">${reasoning}</p>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg mb-1 text-gray-900">Next Steps:</h3>
+              <p class="break-words">${nextSteps}</p>
+            </div>
+          `;
+          resultDiv.style.color = '';
+        } else {
+          resultDiv.innerHTML = '<p class="text-red-500">Error: Could not get a valid response from the AI. Please try again.</p>';
+        }
+      } catch (error) {
+        console.error("Error calling Gemini API:", error);
+        resultDiv.innerHTML = `<p class="text-red-500">An error occurred: ${error.message}. Please check your network connection or try again later.</p>`;
+      }
+    }
+
+    function clearInput() {
+      document.getElementById("inputText").value = '';
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = '<p class="text-gray-500 italic">Enter a description and click "Check It" to get started.</p>';
+      resultDiv.classList.add('flex', 'items-center', 'justify-center');
+      resultDiv.classList.remove('text-left');
+    }
+  </script>
+</body>
+</html>
